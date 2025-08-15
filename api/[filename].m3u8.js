@@ -3,8 +3,9 @@ const fs = require('fs').promises;
 const path = require('path');
 
 module.exports = async (req, res) => {
-    const { filename } = req.query; // Get filename from URL (e.g., one.m3u8)
-    console.log(`Requested filename: ${filename}`);
+    // Try req.params first, then req.query for filename
+    const filename = req.params?.filename || req.query?.filename;
+    console.log(`Requested filename: ${filename}, params: ${JSON.stringify(req.params)}, query: ${JSON.stringify(req.query)}`);
 
     if (!filename || !filename.endsWith('.m3u8')) {
         console.error('Invalid or missing filename');
@@ -15,7 +16,7 @@ module.exports = async (req, res) => {
     try {
         // Read streams.json
         const streamsPath = path.join(__dirname, '../public/streams.json');
-        console.log(`Attempting to read streams.json from: ${streamsPath}`);
+        console.log(`Reading streams.json from: ${streamsPath}`);
         let streams;
         try {
             const streamsData = await fs.readFile(streamsPath, 'utf8');
@@ -81,6 +82,7 @@ module.exports = async (req, res) => {
         console.log(`Fetching m3u8 content from: ${m3u8Link}`);
         const m3u8Response = await fetch(m3u8Link);
         if (!m3u8Response.ok) {
+            console.error(`Failed to fetch m3u8: ${m3u8Response.status}`);
             throw new Error(`Failed to fetch m3u8: ${m3u8Response.status}`);
         }
         const m3u8Content = await m3u8Response.text();
