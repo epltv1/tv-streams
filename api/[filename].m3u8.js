@@ -4,7 +4,10 @@ const path = require('path');
 
 module.exports = async (req, res) => {
     const { filename } = req.query; // Get filename from URL (e.g., one.m3u8)
+    console.log(`Requested filename: ${filename}`);
+
     if (!filename || !filename.endsWith('.m3u8')) {
+        console.error('Invalid filename');
         res.status(400).send('#EXTM3U\n#EXTINF:-1,Error\n#EXT-X-ENDLIST\n# Invalid filename');
         return;
     }
@@ -12,16 +15,19 @@ module.exports = async (req, res) => {
     try {
         // Read streams.json
         const streamsPath = path.join(__dirname, '../public/streams.json');
+        console.log(`Reading streams.json from: ${streamsPath}`);
         const streamsData = await fs.readFile(streamsPath, 'utf8');
         const streams = JSON.parse(streamsData);
 
         // Find the stream matching the filename
         const stream = streams.find(s => s.filename === filename);
         if (!stream) {
+            console.error(`Stream not found for filename: ${filename}`);
             res.status(404).send('#EXTM3U\n#EXTINF:-1,Error\n#EXT-X-ENDLIST\n# Stream not found');
             return;
         }
 
+        console.log(`Found stream: ${JSON.stringify(stream)}`);
         const targetUrl = stream.sourceUrl;
 
         // Launch headless browser
@@ -36,19 +42,23 @@ module.exports = async (req, res) => {
         page.on('request', (request) => {
             if (request.url().endsWith('.m3u8')) {
                 m3u8Link = request.url();
+                console.log(`Captured m3u8 link: ${m3u8Link}`);
             }
             request.continue();
         });
 
         // Navigate to the target URL
+        console.log(`Navigating to: ${targetUrl}`);
         await page.goto(targetUrl, { waitUntil: 'networkidle2' });
         await browser.close();
 
         if (!m3u8Link) {
+            console.error('No m3u8 link found');
             throw new Error('No m3u8 link found');
         }
 
         // Fetch the m3u8 content
+        console.log(`Fetching m3u8 content from: ${m3u8Link}`);
         const m3u8Response = await fetch(m3u8Link);
         const m3u8Content = await m3u8Response.text();
 
@@ -60,7 +70,7 @@ module.exports = async (req, res) => {
 
         res.status(200).send(m3u8Content);
     } catch (error) {
-        console.error('Error:', error);
+        console.error(`Error: ${error.message}`);
         res.status(500).send('#EXTM3U\n#EXTINF:-1,Error\n#EXT-X-ENDLIST\n# Error fetching stream');
     }
 };
