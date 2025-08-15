@@ -1,26 +1,17 @@
 {
     "rewrites": [
         {
-            "source": "/:stream.m3u8",
-            "destination": "/api/[stream].m3u8"
+            "source": "/:filename.m3u8",
+            "destination": "/api/[filename].m3u8"
         }
     ],
     "headers": [
         {
             "source": "/(.*)",
             "headers": [
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                },
-                {
-                    "key": "Access-Control-Allow-Methods",
-                    "value": "GET"
-                },
-                {
-                    "key": "Cache-Control",
-                    "value": "no-cache"
-                }
+                { "key": "Access-Control-Allow-Origin", "value": "*" },
+                { "key": "Access-Control-Allow-Methods", "value": "GET" },
+                { "key": "Cache-Control", "value": "no-cache" }
             ]
         }
     ]
